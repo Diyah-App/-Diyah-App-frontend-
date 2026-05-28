@@ -181,7 +181,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
       child: Scaffold(
         appBar: CustomAppBar(
           title: 'تفاصيل الدية',
-          extraActions: [
+          extraActions: ['owner', 'sheikh', 'admin'].contains(AuthService.role) ? [
             IconButton(
               icon: Icon(_diyah.isFinished ? Icons.check_circle : Icons.circle_outlined, color: Colors.white),
               tooltip: _diyah.isFinished ? 'إعادة فتح' : 'إنهاء الدية',
@@ -208,7 +208,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                 setState(() => _diyah = updated);
               },
             ),
-          ],
+          ] : null,
         ),
         body: _isLoading ? const Center(child: CircularProgressIndicator()) : Column(
           children: [
@@ -597,11 +597,14 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
           ),
         ],
       ),
-      trailing: Switch(
+      trailing: ['owner', 'sheikh', 'admin'].contains(AuthService.role) ? Switch(
         value: isPaid,
         activeTrackColor: Colors.green.shade400,
         activeColor: Colors.green.shade900,
         onChanged: (_) => _togglePayment(member.id!),
+      ) : Icon(
+        isPaid ? Icons.check_circle : Icons.circle_outlined,
+        color: isPaid ? Colors.green : Colors.grey,
       ),
     );
   }
@@ -686,11 +689,14 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                       MaterialPageRoute(builder: (ctx) => MemberDetailsScreen(member: wajeeh)),
                     ),
                   ),
-                  Switch(
+                  ['owner', 'sheikh', 'admin'].contains(AuthService.role) ? Switch(
                     value: _payments.containsKey(wajeeh.id),
                     activeTrackColor: Colors.green.shade400,
                     activeColor: Colors.green.shade900,
                     onChanged: (_) => _togglePayment(wajeeh.id!),
+                  ) : Icon(
+                    _payments.containsKey(wajeeh.id) ? Icons.check_circle : Icons.circle_outlined,
+                    color: _payments.containsKey(wajeeh.id) ? Colors.green : Colors.grey,
                   ),
                 ],
               ),
@@ -777,18 +783,19 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                   child: Text('• المتبقي كطلب بالذمة (سالب): ${intl.NumberFormat('#,##0.##').format(remainingClaim)} د.ع', 
                     style: TextStyle(fontSize: 12, color: Colors.red.shade800, fontWeight: FontWeight.w600)),
                 ),
-                ElevatedButton.icon(
-                  onPressed: () => _payRemaining(member.id!, remainingClaim, cashPaid),
-                  icon: const Icon(Icons.payment, size: 12, color: Colors.red),
-                  label: const Text('دفع الباقي', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    backgroundColor: Colors.red.shade50,
-                    foregroundColor: Colors.red.shade900,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                if (['owner', 'sheikh', 'admin'].contains(AuthService.role))
+                  ElevatedButton.icon(
+                    onPressed: () => _payRemaining(member.id!, remainingClaim, cashPaid),
+                    icon: const Icon(Icons.payment, size: 12, color: Colors.red),
+                    label: const Text('دفع الباقي', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      backgroundColor: Colors.red.shade50,
+                      foregroundColor: Colors.red.shade900,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
