@@ -8,6 +8,7 @@ class MemberTile extends StatelessWidget {
   final VoidCallback? onRefresh;
   final Widget? trailing;
   final Widget? subtitleOverride;
+  final VoidCallback? onTap;
 
   const MemberTile({
     super.key,
@@ -15,6 +16,7 @@ class MemberTile extends StatelessWidget {
     this.onRefresh,
     this.trailing,
     this.subtitleOverride,
+    this.onTap,
   });
 
   @override
@@ -28,7 +30,7 @@ class MemberTile extends StatelessWidget {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        onTap: () async {
+        onTap: onTap ?? () async {
           final updated = await Navigator.push(
             context,
             MaterialPageRoute(builder: (ctx) => MemberDetailsScreen(member: member)),

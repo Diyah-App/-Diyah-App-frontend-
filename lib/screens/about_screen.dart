@@ -4,7 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/foundation.dart'; // Add kIsWeb and defaultTargetPlatform
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import '../utils/constants.dart';
-import '../services/notification_service.dart';
+import '../widgets/custom_app_bar.dart';
 import 'legal_screen.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -22,11 +22,8 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('حول التطبيق'),
-        actions: const [
-          NotificationBadgeIcon(),
-        ],
+      appBar: const CustomAppBar(
+        title: 'حول التطبيق',
       ),
       body: SelectionArea(
         child: SingleChildScrollView(

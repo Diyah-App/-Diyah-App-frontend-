@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import '../services/notification_service.dart';
+import '../widgets/custom_app_bar.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../models/member_model.dart';
@@ -14,11 +14,8 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('الإعدادات'),
-        actions: const [
-          NotificationBadgeIcon(),
-        ],
+      appBar: const CustomAppBar(
+        title: 'الإعدادات',
       ),
       body: ListView(
         children: [

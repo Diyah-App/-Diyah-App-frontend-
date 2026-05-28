@@ -9,28 +9,32 @@ class AuthService {
   static String get baseUrl => AppConstants.baseUrl;
   static Map<String, dynamic>? currentUser;
 
-  static Future<bool> login(String username, String password) async {
+  static Future<String?> login(String username, String password) async {
     try {
+      final url = '$baseUrl/login';
+      print('Attempting login to URL: $url');
       final response = await http.post(
-        Uri.parse('$baseUrl/login'),
+        Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'X-App-Token': AppConstants.appToken,
         },
         body: jsonEncode({'username': username, 'password': password}),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         currentUser = data['user'];
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user', jsonEncode(currentUser));
-        return true;
+        return null;
+      } else {
+        return 'Server status ${response.statusCode}: ${response.body}';
       }
     } catch (e) {
       print('Login Error: $e');
+      return 'Error: $e (URL: $baseUrl/login)';
     }
-    return false;
   }
 
   static Future<void> logout() async {

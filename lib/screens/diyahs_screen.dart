@@ -4,9 +4,11 @@ import 'package:intl/intl.dart' as intl;
 import '../models/diyah_model.dart';
 import '../models/member_model.dart';
 import '../services/api_service.dart';
+import '../widgets/custom_app_bar.dart';
 import '../widgets/smart_search_bar.dart';
 import 'diyah_details_screen.dart';
 import 'payment_management_screen.dart';
+import '../utils/number_utility.dart';
 
 import '../services/notification_service.dart';
 import '../services/auth_service.dart';
@@ -75,10 +77,21 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
 
   Future<void> _showAddEditDialog([Diyah? diyah]) async {
     final titleController = TextEditingController(text: diyah?.title);
-    final amountController = TextEditingController(text: diyah?.amount.toString());
+    final amountController = TextEditingController(text: diyah?.amount.toString() == '0.0' ? '' : diyah?.amount.toString());
     final descController = TextEditingController(text: diyah?.description);
+    final percentController = TextEditingController(text: diyah?.ownerPercentage?.toString() ?? '35');
+    final ownerAmountController = TextEditingController();
+    
     DateTime? selectedDate = diyah?.manualDate;
     int? selectedCausedById = diyah?.causedById;
+    bool useCustomPercentage = diyah?.ownerPercentage != null;
+
+    if (useCustomPercentage && diyah != null) {
+      final initialOwnerAmount = diyah.amount * (diyah.ownerPercentage! / 100.0);
+      ownerAmountController.text = initialOwnerAmount % 1 == 0 
+          ? initialOwnerAmount.toInt().toString() 
+          : initialOwnerAmount.toStringAsFixed(2);
+    }
 
     List<Member> allMembers = await ApiService.getMembers();
 
@@ -95,13 +108,28 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(controller: titleController, decoration: const InputDecoration(labelText: 'العنوان')),
-                  TextField(controller: amountController, decoration: const InputDecoration(labelText: 'المبلغ الإجمالي'), keyboardType: TextInputType.number),
+                  TextField(controller: titleController, decoration: const InputDecoration(labelText: 'العنوان *')),
+                  TextField(
+                    controller: amountController, 
+                    decoration: const InputDecoration(labelText: 'المبلغ الإجمالي *'), 
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                    inputFormatters: [AmountInputFormatter()],
+                    onChanged: (val) {
+                      if (useCustomPercentage) {
+                        final totalAmount = NumberUtility.tryParseDouble(val) ?? 0.0;
+                        final percent = NumberUtility.tryParseDouble(percentController.text) ?? 0.0;
+                        final ownerAmount = totalAmount * (percent / 100.0);
+                        ownerAmountController.text = ownerAmount % 1 == 0 
+                            ? ownerAmount.toInt().toString() 
+                            : ownerAmount.toStringAsFixed(2);
+                      }
+                    },
+                  ),
                   TextField(controller: descController, decoration: const InputDecoration(labelText: 'الوصف (اختياري)')),
                   const SizedBox(height: 16),
                   ListTile(
-                    title: Text(selectedCausedById == null ? 'اختر صاحب الدية' : 'صاحب الدية: ${allMembers.firstWhere((m) => m.id == selectedCausedById).fullName}'),
-                    subtitle: selectedCausedById != null ? Text(allMembers.firstWhere((m) => m.id == selectedCausedById).phone) : null,
+                    title: Text(selectedCausedById == null ? 'اختر صاحب الدية *' : 'صاحب الدية: ${allMembers.firstWhere((m) => m.id == selectedCausedById, orElse: () => allMembers[0]).fullName}'),
+                    subtitle: selectedCausedById != null ? Text(allMembers.firstWhere((m) => m.id == selectedCausedById, orElse: () => allMembers[0]).phone) : null,
                     trailing: const Icon(Icons.search),
                     onTap: () async {
                       final picked = await showDialog<Member>(
@@ -111,9 +139,82 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                       if (picked != null) setDialogState(() => selectedCausedById = picked.id);
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const Divider(),
+                  SwitchListTile(
+                    title: const Text('تحديد حصة صاحب الدية (%)'),
+                    subtitle: const Text('إذا لم يتم التفعيل، سيتم التقسيم بالتساوي على الجميع'),
+                    value: useCustomPercentage,
+                    onChanged: (val) {
+                      setDialogState(() {
+                        useCustomPercentage = val;
+                        if (val) {
+                          if (percentController.text.isEmpty) {
+                            percentController.text = '35';
+                          }
+                          final totalAmount = NumberUtility.tryParseDouble(amountController.text) ?? 0.0;
+                          final percent = NumberUtility.tryParseDouble(percentController.text) ?? 35.0;
+                          final ownerAmount = totalAmount * (percent / 100.0);
+                          ownerAmountController.text = ownerAmount % 1 == 0 
+                              ? ownerAmount.toInt().toString() 
+                              : ownerAmount.toStringAsFixed(2);
+                        }
+                      });
+                    },
+                  ),
+                  if (useCustomPercentage)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: percentController,
+                              decoration: const InputDecoration(
+                                labelText: 'النسبة (%)',
+                                border: OutlineInputBorder(),
+                              ),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                              inputFormatters: [AmountInputFormatter()],
+                              onChanged: (val) {
+                                final totalAmount = NumberUtility.tryParseDouble(amountController.text) ?? 0.0;
+                                final percent = NumberUtility.tryParseDouble(val) ?? 0.0;
+                                if (totalAmount > 0) {
+                                  final ownerAmount = totalAmount * (percent / 100.0);
+                                  ownerAmountController.text = ownerAmount % 1 == 0 
+                                      ? ownerAmount.toInt().toString() 
+                                      : ownerAmount.toStringAsFixed(2);
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: ownerAmountController,
+                              decoration: const InputDecoration(
+                                labelText: 'مبلغ صاحب الدية (د.ع)',
+                                border: OutlineInputBorder(),
+                              ),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                              inputFormatters: [AmountInputFormatter()],
+                              onChanged: (val) {
+                                final totalAmount = NumberUtility.tryParseDouble(amountController.text) ?? 0.0;
+                                final ownerAmount = NumberUtility.tryParseDouble(val) ?? 0.0;
+                                if (totalAmount > 0) {
+                                  final percent = (ownerAmount / totalAmount) * 100.0;
+                                  percentController.text = percent % 1 == 0 
+                                      ? percent.toInt().toString() 
+                                      : percent.toStringAsFixed(2);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const Divider(),
                   ListTile(
-                    title: Text(selectedDate == null ? 'اختر تاريخ الواقعة' : 'التاريخ: ${intl.DateFormat('yyyy-MM-dd').format(selectedDate!)}'),
+                    title: Text(selectedDate == null ? 'تاريخ الواقعة (اختياري)' : 'تاريخ الواقعة: ${intl.DateFormat('yyyy-MM-dd').format(selectedDate!)}'),
                     trailing: const Icon(Icons.calendar_today),
                     onTap: () async {
                       final picked = await showDatePicker(
@@ -130,20 +231,28 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-              TextButton(
+              ElevatedButton(
                 onPressed: () async {
-                  if (titleController.text.isEmpty || amountController.text.isEmpty) {
+                  if (titleController.text.isEmpty || amountController.text.isEmpty || selectedCausedById == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى ملء الحقول الإجبارية (*)'), backgroundColor: Colors.red));
                     return;
                   }
+                  
+                  double? percentage;
+                  if (useCustomPercentage) {
+                    percentage = NumberUtility.tryParseDouble(percentController.text) ?? 35.0;
+                  }
+
                   final diyahData = Diyah(
                     id: diyah?.id,
                     title: titleController.text,
-                    amount: double.parse(amountController.text),
+                    amount: NumberUtility.tryParseDouble(amountController.text) ?? 0.0,
                     description: descController.text,
                     manualDate: selectedDate,
                     createdAt: diyah?.createdAt ?? DateTime.now(),
                     causedById: selectedCausedById,
                     isFinished: diyah?.isFinished ?? false,
+                    ownerPercentage: percentage,
                   );
                   try {
                     if (diyah == null) {
@@ -183,11 +292,8 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('سجل الديات'),
-        actions: const [
-          NotificationBadgeIcon(),
-        ],
+      appBar: CustomAppBar(
+        title: 'سجل الديات',
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(105),
           child: Column(
@@ -300,12 +406,33 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
     return Card(
       margin: const EdgeInsets.all(8),
       child: ListTile(
-        title: Text(diyah.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Row(
+          children: [
+            Expanded(child: Text(diyah.title, style: const TextStyle(fontWeight: FontWeight.bold))),
+            if (diyah.isFullyPaid)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: diyah.isFinished ? Colors.green.shade100 : Colors.blue.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: diyah.isFinished ? Colors.green : Colors.blue),
+                ),
+                child: Text(
+                  diyah.isFinished ? 'مغلقة ومسددة' : 'مسددة بالكامل',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: diyah.isFinished ? Colors.green.shade900 : Colors.blue.shade900,
+                  ),
+                ),
+              ),
+          ],
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('المبلغ الإجمالي: ${intl.NumberFormat('#,###').format(diyah.amount)} د.ع'),
-            Text('حصة الفرد: ${intl.NumberFormat('#,###').format(diyah.sharePerMember)} د.ع', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            Text('المبلغ الإجمالي: ${intl.NumberFormat('#,##0.##').format(diyah.amount)} د.ع'),
+            Text('حصة الفرد: ${intl.NumberFormat('#,##0.##').format(diyah.sharePerMember)} د.ع', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
             Text('صاحب الدية: ${diyah.causedByName ?? "غير محدد"}', style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
             const SizedBox(height: 4),
             Row(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/custom_app_bar.dart';
 
 class LegalScreen extends StatelessWidget {
   const LegalScreen({super.key});
@@ -6,8 +7,8 @@ class LegalScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('الشؤون القانونية'),
+      appBar: const CustomAppBar(
+        title: 'الشؤون القانونية',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),

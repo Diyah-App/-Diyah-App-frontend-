@@ -73,7 +73,7 @@ class TribalApp extends StatelessWidget {
   final bool needsUpdate;
   final String updateUrl;
   
-  const TribalApp({super.key, required this.needsUpdate, required this.updateUrl});
+  const TribalApp({super.key, this.needsUpdate = false, this.updateUrl = ""});
 
   @override
   Widget build(BuildContext context) {

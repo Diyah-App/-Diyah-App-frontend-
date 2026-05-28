@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/notification_service.dart';
 import '../services/auth_service.dart';
+import '../widgets/custom_app_bar.dart';
 import 'members_screen.dart';
 import 'diyahs_screen.dart';
 import 'about_screen.dart';
@@ -127,32 +128,9 @@ class _EmptyHomeState extends State<_EmptyHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'ميثاق الدية العشائرية',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-          overflow: TextOverflow.ellipsis,
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(AuthService.isLoggedIn ? Icons.logout : Icons.login),
-            tooltip: AuthService.isLoggedIn ? 'تسجيل الخروج' : 'تسجيل الدخول',
-            onPressed: () async {
-              if (AuthService.isLoggedIn) {
-                await AuthService.logout();
-                if (!context.mounted) return;
-                Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => HomeScreen(needsUpdate: widget.needsUpdate, updateUrl: widget.updateUrl)), (route) => false);
-              } else {
-                await Navigator.of(context, rootNavigator: true).push(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                );
-                setState(() {});
-              }
-            },
-          ),
-          const NotificationBadgeIcon(),
-        ],
+      appBar: CustomAppBar(
+        title: 'ميثاق الدية العشائرية',
+        showBackButton: false,
         bottom: widget.needsUpdate ? PreferredSize(
           preferredSize: const Size.fromHeight(50),
           child: Container(

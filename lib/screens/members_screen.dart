@@ -2,10 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/member_model.dart';
 import '../services/api_service.dart';
+import '../widgets/custom_app_bar.dart';
 import '../theme/app_theme.dart';
 import '../widgets/member_tile.dart';
 import '../widgets/smart_search_bar.dart';
 import 'member_details_screen.dart';
+import '../utils/number_utility.dart';
 
 import '../services/notification_service.dart';
 import '../services/auth_service.dart';
@@ -89,11 +91,8 @@ class _MembersScreenState extends State<MembersScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('ادارة الوجهاء و الاعضاء'),
-          actions: const [
-            NotificationBadgeIcon(),
-          ],
+        appBar: const CustomAppBar(
+          title: 'إدارة الوجهاء والأعضاء',
         ),
         body: Column(
           children: [
@@ -341,19 +340,11 @@ class _MembersScreenState extends State<MembersScreen> {
             onSelected: (val) {
               if (val == 'edit') _showMemberDialog(member: member);
               if (val == 'delete') _deleteMember(member);
-              if (val == 'promote_admin') _promote(member, 'admin');
-              if (val == 'promote_sheikh') _promote(member, 'sheikh');
-              if (val == 'demote_member') _promote(member, 'member');
-              if (val == 'demote_wajeeh') _promote(member, 'wajeeh');
               if (val == 'change_password') _changeUserPassword(member);
             },
             itemBuilder: (ctx) => [
               if (canEdit) const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('تعديل')])),
               if (canDelete) const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 18, color: Colors.red), SizedBox(width: 8), Text('حذف', style: TextStyle(color: Colors.red))])),
-              if (role == 'owner' || role == 'sheikh') const PopupMenuItem(value: 'promote_admin', child: Row(children: [Icon(Icons.admin_panel_settings, size: 18), SizedBox(width: 8), Text('ترقية لأدمن')])),
-              if (role == 'owner') const PopupMenuItem(value: 'promote_sheikh', child: Row(children: [Icon(Icons.star, size: 18, color: Colors.amber), SizedBox(width: 8), Text('ترقية لشيخ')])),
-              if (role == 'owner' || role == 'sheikh') const PopupMenuItem(value: 'demote_member', child: Row(children: [Icon(Icons.arrow_downward, size: 18), SizedBox(width: 8), Text('إنزال إلى عضو')])),
-              if (role == 'owner' || role == 'sheikh') const PopupMenuItem(value: 'demote_wajeeh', child: Row(children: [Icon(Icons.arrow_downward, size: 18), SizedBox(width: 8), Text('إنزال إلى وجيه')])),
               if (canChangePassword) const PopupMenuItem(value: 'change_password', child: Row(children: [Icon(Icons.lock_reset, size: 18, color: Colors.blue), SizedBox(width: 8), Text('تغيير رمز المرور', style: TextStyle(color: Colors.blue))])),
             ],
           ),
@@ -545,7 +536,7 @@ class _MembersScreenState extends State<MembersScreen> {
                       final updatedMember = Member(
                         id: member?.id,
                         fullName: _nameController.text,
-                        phone: _phoneController.text,
+                        phone: NumberUtility.cleanNumberString(_phoneController.text),
                         isWajeeh: AuthService.role == 'wajeeh' ? false : _isWajeeh, // Wajeeh cannot add another Wajeeh
                         wajeehId: AuthService.role == 'wajeeh' ? AuthService.currentUserId : (_isWajeeh ? null : _selectedWajeehId),
                       );

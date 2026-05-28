@@ -7,6 +7,7 @@ class Member {
   final String? wajeehName;
   final String role;
   final DateTime? createdAt;
+  final double balance;
 
   Member({
     this.id,
@@ -17,6 +18,7 @@ class Member {
     this.wajeehName,
     this.role = 'member',
     this.createdAt,
+    this.balance = 0.0,
   });
 
   factory Member.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class Member {
       wajeehName: json['wajeeh_name'],
       role: json['role'] ?? 'member',
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
+      balance: (json['balance'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -40,6 +43,7 @@ class Member {
       'is_wajeeh': isWajeeh,
       'wajeeh_id': wajeehId,
       'role': role,
+      'balance': balance,
     };
   }
 }

@@ -4,8 +4,9 @@ import '../models/diyah_model.dart';
 import '../services/api_service.dart';
 import '../widgets/smart_search_bar.dart';
 
-import '../services/notification_service.dart';
+import '../widgets/custom_app_bar.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 
 class PaymentManagementScreen extends StatefulWidget {
   final Diyah diyah;
@@ -17,7 +18,9 @@ class PaymentManagementScreen extends StatefulWidget {
 }
 
 class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
+  late Diyah _diyah;
   List<Member> _allMembers = [];
+  Map<int, double?> _payments = {}; // Map of memberId to amount paid
   Set<int> _paidMemberIds = {};
   Set<int> _eligibleMemberIds = {};
   bool _isLoading = true;
@@ -27,17 +30,19 @@ class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
   @override
   void initState() {
     super.initState();
+    _diyah = widget.diyah;
     _loadData();
   }
 
   Future<void> _loadData() async {
     try {
       var members = await ApiService.getMembers();
-      final status = await ApiService.getDiyahPaymentStatus(widget.diyah.id!);
+      final status = await ApiService.getDiyahPaymentStatus(_diyah.id!);
       if (!mounted) return;
       setState(() {
         _allMembers = members;
-        _paidMemberIds = status['paid']!.toSet();
+        _payments = Map<int, double?>.from(status['payments'] ?? {});
+        _paidMemberIds = _payments.keys.toSet();
         _eligibleMemberIds = status['eligible']!.toSet();
         _isLoading = false;
       });
@@ -51,7 +56,7 @@ class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
   Future<void> _syncPayments() async {
     setState(() => _isSaving = true);
     try {
-      await ApiService.updateDiyahPayments(widget.diyah.id!, _paidMemberIds.toList());
+      await ApiService.updateDiyahPayments(_diyah.id!, _payments);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في المزامنة: $e')));
     } finally {
@@ -69,13 +74,18 @@ class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
       }
     }
 
-    bool wasPaid = _paidMemberIds.contains(memberId);
+    bool wasPaid = _payments.containsKey(memberId);
     setState(() {
       if (wasPaid) {
-        _paidMemberIds.remove(memberId);
+        _payments.remove(memberId);
       } else {
-        _paidMemberIds.add(memberId);
+        double defaultAmount = _diyah.sharePerMember;
+        if (memberId == _diyah.causedById && _diyah.ownerPercentage != null) {
+          defaultAmount = _diyah.amount * (_diyah.ownerPercentage! / 100);
+        }
+        _payments[memberId] = defaultAmount;
       }
+      _paidMemberIds = _payments.keys.toSet();
     });
     
     NotificationService().addNotification(
@@ -84,24 +94,32 @@ class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
     );
     
     await _syncPayments();
+    await _checkAndPromptDiyahCompletion();
   }
 
   Future<void> _selectAll() async {
     setState(() {
       for (var m in _allMembers) {
+        if (!_eligibleMemberIds.contains(m.id)) continue;
         if (AuthService.role == 'wajeeh') {
           if (m.id != AuthService.currentUserId && m.wajeehId != AuthService.currentUserId) continue;
         }
-        _paidMemberIds.add(m.id!);
+        double defaultAmount = _diyah.sharePerMember;
+        if (m.id == _diyah.causedById && _diyah.ownerPercentage != null) {
+          defaultAmount = _diyah.amount * (_diyah.ownerPercentage! / 100);
+        }
+        _payments[m.id!] = defaultAmount;
       }
+      _paidMemberIds = _payments.keys.toSet();
     });
     NotificationService().addNotification(
       title: 'تحصيل جماعي',
-      message: 'تم تحديد الأعضاء كدافعين لدية ${widget.diyah.title}',
+      message: 'تم تحديد الأعضاء كدافعين لدية ${_diyah.title}',
       type: NotificationType.diyah,
-      entityId: widget.diyah.id,
+      entityId: _diyah.id,
     );
     await _syncPayments();
+    await _checkAndPromptDiyahCompletion();
   }
 
   Future<void> _deselectAll() async {
@@ -110,16 +128,103 @@ class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
         if (AuthService.role == 'wajeeh') {
           if (m.id != AuthService.currentUserId && m.wajeehId != AuthService.currentUserId) continue;
         }
-        _paidMemberIds.remove(m.id!);
+        _payments.remove(m.id!);
       }
+      _paidMemberIds = _payments.keys.toSet();
     });
     NotificationService().addNotification(
       title: 'إلغاء تسديد جماعي',
-      message: 'تم إلغاء تسديد الدية لجميع الأعضاء في ${widget.diyah.title}',
+      message: 'تم إلغاء تسديد الدية لجميع الأعضاء في ${_diyah.title}',
       type: NotificationType.diyah,
-      entityId: widget.diyah.id,
+      entityId: _diyah.id,
     );
     await _syncPayments();
+    await _checkAndPromptDiyahCompletion();
+  }
+
+  bool _checkIfAllMembersPaid() {
+    final eligibleMembers = _allMembers.where((m) => _eligibleMemberIds.contains(m.id)).toList();
+    if (eligibleMembers.isEmpty) return false;
+    for (var member in eligibleMembers) {
+      final paidAmount = _payments[member.id];
+      double memberShare = _diyah.sharePerMember;
+      if (member.id == _diyah.causedById && _diyah.ownerPercentage != null) {
+        memberShare = _diyah.amount * (_diyah.ownerPercentage! / 100);
+      }
+      final cashPaid = paidAmount ?? 0.0;
+      final balanceBefore = member.balance - cashPaid + memberShare;
+      double remainingClaim = memberShare - cashPaid;
+      double coveredFromBalance = 0.0;
+      if (remainingClaim > 0 && balanceBefore > 0) {
+        coveredFromBalance = balanceBefore >= remainingClaim ? remainingClaim : balanceBefore;
+        remainingClaim = remainingClaim - coveredFromBalance;
+      }
+      if (remainingClaim > 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Future<void> _checkAndPromptDiyahCompletion() async {
+    final isNowFullyPaid = _checkIfAllMembersPaid();
+    if (!_diyah.isFullyPaid && isNowFullyPaid) {
+      if (!mounted) return;
+      final bool? closeDiyah = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            title: const Text('اكتمل سداد الدية'),
+            content: const Text('تم دفع حساب الدية بالكامل من قبل جميع الأعضاء المشمولين! هل تريد إغلاق هذه الدية الآن؟\n\n(إذا اخترت نعم، سيتم إغلاق الدية وتحديدها كمسددة ومغلقة. وإذا اخترت لا، ستظل مفتوحة ولكن مع تحديدها كدية مسددة بالكامل).'),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                child: const Text('نعم، إغلاق الدية', style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('لا، إبقاء مفتوحة'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (closeDiyah == null) return;
+
+      final updated = Diyah(
+        id: _diyah.id,
+        title: _diyah.title,
+        amount: _diyah.amount,
+        description: _diyah.description,
+        manualDate: _diyah.manualDate,
+        createdAt: _diyah.createdAt,
+        causedById: _diyah.causedById,
+        isFinished: closeDiyah,
+        isFullyPaid: true,
+        totalMembersCount: _diyah.totalMembersCount,
+        sharePerMember: _diyah.sharePerMember,
+        ownerPercentage: _diyah.ownerPercentage,
+      );
+
+      try {
+        await ApiService.updateDiyah(updated);
+        setState(() {
+          _diyah = updated;
+        });
+        NotificationService().addNotification(
+          title: closeDiyah ? 'إغلاق دية مكتملة' : 'دية مسددة بالكامل',
+          message: closeDiyah ? 'تم إغلاق الدية المسددة: ${_diyah.title}' : 'تم تحديد الدية كمسددة بالكامل: ${_diyah.title}',
+          type: NotificationType.diyah,
+          entityId: _diyah.id,
+        );
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في تحديث حالة الدية: $e')));
+      }
+    }
   }
 
   @override
@@ -133,10 +238,9 @@ class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text('تحصيل: ${widget.diyah.title}'),
-          actions: [
-            const NotificationBadgeIcon(),
+        appBar: CustomAppBar(
+          title: 'تحصيل: ${_diyah.title}',
+          extraActions: [
             if (_isSaving) 
               const Center(child: Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))),
             TextButton(

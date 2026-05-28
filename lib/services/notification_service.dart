@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'api_service.dart';
 import '../screens/member_details_screen.dart';
 import '../screens/diyah_details_screen.dart';
+import '../widgets/custom_app_bar.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -50,6 +51,10 @@ class NotificationService extends ChangeNotifier {
   // Stream for auto-refreshing screens
   final StreamController<void> _refreshController = StreamController<void>.broadcast();
   Stream<void> get onRefreshRequired => _refreshController.stream;
+
+  void addRefreshRequest() {
+    _refreshController.add(null);
+  }
 
   final List<NotificationModel> _notifications = [];
   List<NotificationModel> get notifications => List.unmodifiable(_notifications);
@@ -280,9 +285,9 @@ class NotificationHistoryScreen extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('سجل الإشعارات'),
-          actions: [
+        appBar: CustomAppBar(
+          title: 'سجل الإشعارات',
+          extraActions: [
             IconButton(
               icon: const Icon(Icons.done_all),
               tooltip: 'تحديد الكل كمقروء',
