@@ -41,7 +41,8 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
 
   Future<void> _loadData() async {
     try {
-      final members = await ApiService.getMembers();
+      final membersResponse = await ApiService.getMembers(limit: 0);
+      final members = (membersResponse['data'] as List).cast<Member>();
       final status = await ApiService.getDiyahPaymentStatus(_diyah.id!);
       
       if (!mounted) return;

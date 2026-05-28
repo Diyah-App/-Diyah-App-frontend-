@@ -54,9 +54,9 @@ class _MembersScreenState extends State<MembersScreen> {
   Future<void> _fetchMembers() async {
     setState(() => _isLoading = true);
     try {
-      final members = await ApiService.getMembers();
+      final response = await ApiService.getMembers(limit: 0); // Fetch all for local grouping and search
       setState(() {
-        _allMembers = members;
+        _allMembers = (response['data'] as List).cast<Member>();
         _applyFilters();
         _isLoading = false;
       });

@@ -35,11 +35,15 @@ class ApiService {
   }
 
   // --- Members ---
-  static Future<List<Member>> getMembers() async {
-    final response = await http.get(Uri.parse('$baseUrl/members'), headers: _getHeaders());
+  static Future<Map<String, dynamic>> getMembers({int page = 1, int limit = 30}) async {
+    final response = await http.get(Uri.parse('$baseUrl/members?page=$page&limit=$limit'), headers: _getHeaders());
     if (response.statusCode == 200) {
-      List data = json.decode(response.body);
-      return data.map((m) => Member.fromJson(m)).toList();
+      final decoded = json.decode(response.body);
+      if (decoded is List) {
+        return {'data': decoded.map((m) => Member.fromJson(m)).toList(), 'has_more': false};
+      }
+      List data = decoded['data'] ?? [];
+      return {'data': data.map((m) => Member.fromJson(m)).toList(), 'has_more': decoded['has_more'] ?? false};
     }
     throw Exception('Failed to load members');
   }
@@ -124,11 +128,15 @@ class ApiService {
   }
 
   // --- Diyahs ---
-  static Future<List<Diyah>> getDiyahs() async {
-    final response = await http.get(Uri.parse('$baseUrl/diyahs'), headers: _getHeaders());
+  static Future<Map<String, dynamic>> getDiyahs({int page = 1, int limit = 30}) async {
+    final response = await http.get(Uri.parse('$baseUrl/diyahs?page=$page&limit=$limit'), headers: _getHeaders());
     if (response.statusCode == 200) {
-      List data = json.decode(response.body);
-      return data.map((m) => Diyah.fromJson(m)).toList();
+      final decoded = json.decode(response.body);
+      if (decoded is List) {
+        return {'data': decoded.map((m) => Diyah.fromJson(m)).toList(), 'has_more': false};
+      }
+      List data = decoded['data'] ?? [];
+      return {'data': data.map((m) => Diyah.fromJson(m)).toList(), 'has_more': decoded['has_more'] ?? false};
     }
     throw Exception('Failed to load diyahs');
   }
@@ -217,14 +225,18 @@ class ApiService {
     throw Exception('Failed to load wallet status');
   }
 
-  static Future<List<WalletTransaction>> getWalletTransactions({String query = ""}) async {
+  static Future<Map<String, dynamic>> getWalletTransactions({String query = "", int page = 1, int limit = 30}) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/wallet/transactions?query=${Uri.encodeComponent(query)}'),
+      Uri.parse('$baseUrl/wallet/transactions?query=${Uri.encodeComponent(query)}&page=$page&limit=$limit'),
       headers: _getHeaders()
     );
     if (response.statusCode == 200) {
-      List data = json.decode(response.body);
-      return data.map((tx) => WalletTransaction.fromJson(tx)).toList();
+      final decoded = json.decode(response.body);
+      if (decoded is List) {
+        return {'data': decoded.map((tx) => WalletTransaction.fromJson(tx)).toList(), 'has_more': false};
+      }
+      List data = decoded['data'] ?? [];
+      return {'data': data.map((tx) => WalletTransaction.fromJson(tx)).toList(), 'has_more': decoded['has_more'] ?? false};
     }
     throw Exception('Failed to load transactions');
   }

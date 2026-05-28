@@ -46,10 +46,10 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
 
   Future<void> _loadDiyahs() async {
     try {
-      final diyahs = await ApiService.getDiyahs();
+      final response = await ApiService.getDiyahs(limit: 0);
       if (!mounted) return;
       setState(() {
-        _allDiyahs = diyahs;
+        _allDiyahs = (response['data'] as List).cast<Diyah>();
         _applyFilters();
         _isLoading = false;
       });
@@ -93,7 +93,8 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
           : initialOwnerAmount.toStringAsFixed(2);
     }
 
-    List<Member> allMembers = await ApiService.getMembers();
+    final membersResponse = await ApiService.getMembers(limit: 0);
+    List<Member> allMembers = (membersResponse['data'] as List).cast<Member>();
 
     if (!mounted) return;
 

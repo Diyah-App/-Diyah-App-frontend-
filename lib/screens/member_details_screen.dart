@@ -46,7 +46,8 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
   Future<void> _loadHistory() async {
     try {
       final history = await ApiService.getMemberHistory(_member.id!);
-      final allMembers = await ApiService.getMembers();
+      final membersResponse = await ApiService.getMembers(limit: 0);
+      final allMembers = (membersResponse['data'] as List).cast<Member>();
       if (!mounted) return;
 
       // Followers = members whose wajeehId matches this member's id

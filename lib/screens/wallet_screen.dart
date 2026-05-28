@@ -40,6 +40,11 @@ class _WalletScreenState extends State<WalletScreen> {
   bool _isLoadingTransactions = true;
   bool _isLoadingMembers = true;
   
+  bool _isLoadingMoreTxs = false;
+  bool _hasMoreTxs = true;
+  int _txPage = 1;
+  final int _txLimit = 30;
+  
   String _txSearchQuery = "";
   String _owingSearchQuery = "";
   String _settledSearchQuery = "";
@@ -82,22 +87,50 @@ class _WalletScreenState extends State<WalletScreen> {
     }
   }
 
-  Future<void> _loadTransactions() async {
+  Future<void> _loadTransactions({bool isRefresh = false}) async {
     if (!mounted) return;
-    setState(() => _isLoadingTransactions = true);
+    if (isRefresh) {
+      _txPage = 1;
+      _hasMoreTxs = true;
+      setState(() => _isLoadingTransactions = true);
+    } else {
+      setState(() => _isLoadingMoreTxs = true);
+    }
+
     try {
-      final txs = await ApiService.getWalletTransactions(query: _txSearchQuery);
+      final response = await ApiService.getWalletTransactions(
+        query: _txSearchQuery,
+        page: _txPage,
+        limit: _txLimit,
+      );
       if (mounted) {
         setState(() {
-          _transactions = txs;
-          _filteredTransactions = txs;
+          final newTxs = (response['data'] as List).cast<WalletTransaction>();
+          if (isRefresh) {
+            _transactions = newTxs;
+          } else {
+            _transactions.addAll(newTxs);
+          }
+          _filteredTransactions = _transactions;
+          _hasMoreTxs = response['has_more'] ?? false;
           _isLoadingTransactions = false;
+          _isLoadingMoreTxs = false;
         });
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoadingTransactions = false);
+        setState(() {
+          _isLoadingTransactions = false;
+          _isLoadingMoreTxs = false;
+        });
       }
+    }
+  }
+
+  void _loadMoreTransactions() {
+    if (!_isLoadingMoreTxs && _hasMoreTxs) {
+      _txPage++;
+      _loadTransactions();
     }
   }
 
@@ -105,7 +138,8 @@ class _WalletScreenState extends State<WalletScreen> {
     if (!mounted) return;
     setState(() => _isLoadingMembers = true);
     try {
-      final members = await ApiService.getMembers();
+      final response = await ApiService.getMembers(limit: 0);
+      final members = (response['data'] as List).cast<Member>();
       if (mounted) {
         setState(() {
           _allMembers = members;
@@ -224,7 +258,7 @@ class _WalletScreenState extends State<WalletScreen> {
             hintText: 'ابحث في السجل عن عضو أو بيان...',
             onChanged: (val) {
               _txSearchQuery = val;
-              _loadTransactions();
+              _loadTransactions(isRefresh: true);
             },
           ),
           const SizedBox(height: 12),
@@ -299,6 +333,16 @@ class _WalletScreenState extends State<WalletScreen> {
                         );
                       }).toList(),
                     ),
+          if (_hasMoreTxs && !_isLoadingTransactions)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: _isLoadingMoreTxs
+                  ? const Center(child: CircularProgressIndicator())
+                  : TextButton(
+                      onPressed: _loadMoreTransactions,
+                      child: const Text('عرض المزيد'),
+                    ),
+            ),
         ],
       ),
     );

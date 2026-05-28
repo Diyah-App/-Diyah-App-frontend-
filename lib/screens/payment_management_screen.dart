@@ -36,7 +36,8 @@ class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
 
   Future<void> _loadData() async {
     try {
-      var members = await ApiService.getMembers();
+      final membersResponse = await ApiService.getMembers(limit: 0);
+      var members = (membersResponse['data'] as List).cast<Member>();
       final status = await ApiService.getDiyahPaymentStatus(_diyah.id!);
       if (!mounted) return;
       setState(() {

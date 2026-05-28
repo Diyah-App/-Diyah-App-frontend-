@@ -191,7 +191,8 @@ class NotificationService extends ChangeNotifier {
 
     try {
       if (type == 'member') {
-        final members = await ApiService.getMembers();
+        final membersResponse = await ApiService.getMembers(limit: 0);
+        final members = (membersResponse['data'] as List).cast<Member>();
         final member = members.firstWhere((m) => m.id == entityId);
         nav.push(MaterialPageRoute(builder: (_) => MemberDetailsScreen(member: member)));
       } else if (type == 'diyah') {
