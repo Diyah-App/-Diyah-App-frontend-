@@ -278,10 +278,32 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                           children: [
                             const Text('تفاصيل الدية المالية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                             const SizedBox(height: 8),
-                            Text('المبلغ المتبقي للتقسيم: ${intl.NumberFormat('#,##0.##', 'en_US').format(remaining)}\u200E د.ع'),
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 4,
+                              children: [
+                                const Text('المبلغ المتبقي للتقسيم:'),
+                                Directionality(
+                                  textDirection: TextDirection.ltr,
+                                  child: Text(intl.NumberFormat('#,##0.##', 'en_US').format(remaining)),
+                                ),
+                                const Text('د.ع'),
+                              ],
+                            ),
                             Text('عدد الأعضاء المساهمين: $eligibleCount عضو', style: const TextStyle(color: Colors.blueGrey)),
                             const SizedBox(height: 4),
-                            Text('الحصة الدقيقة لكل عضو: ${intl.NumberFormat('#,##0.##', 'en_US').format(exactShare)}\u200E د.ع', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 4,
+                              children: [
+                                const Text('الحصة الدقيقة لكل عضو:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                                Directionality(
+                                  textDirection: TextDirection.ltr,
+                                  child: Text(intl.NumberFormat('#,##0.##', 'en_US').format(exactShare), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                                ),
+                                const Text('د.ع', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                              ],
+                            ),
                             const SizedBox(height: 12),
                             TextField(
                               controller: roundedShareController,

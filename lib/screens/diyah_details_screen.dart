@@ -364,9 +364,16 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                     children: [
                       const Text('المبلغ الإجمالي', style: TextStyle(fontSize: 11, color: Colors.white60)),
                       const SizedBox(height: 2),
-                      Text(
-                        '${fmt.format(_diyah.amount)} د.ع',
-                        style: const TextStyle(fontSize: 15, color: Colors.white70, fontWeight: FontWeight.w600),
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 2,
+                        children: [
+                          Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Text(fmt.format(_diyah.amount), style: const TextStyle(fontSize: 15, color: Colors.white70, fontWeight: FontWeight.w600)),
+                          ),
+                          const Text('د.ع', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                        ],
                       ),
                     ],
                   ),
@@ -378,9 +385,16 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                     children: [
                       const Text('الحصة الدقيقة', style: TextStyle(fontSize: 11, color: Colors.white60)),
                       const SizedBox(height: 2),
-                      Text(
-                        '${fmt.format(_diyah.sharePerMember)} د.ع',
-                        style: const TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.bold),
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 2,
+                        children: [
+                          Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Text(fmt.format(_diyah.sharePerMember), style: const TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.bold)),
+                          ),
+                          const Text('د.ع', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                        ],
                       ),
                     ],
                   ),
@@ -394,9 +408,16 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                       children: [
                         const Text('الحصة التقريبية (المعتمدة)', style: TextStyle(fontSize: 11, color: Colors.white60)),
                         const SizedBox(height: 2),
-                        Text(
-                          '${fmt.format(_diyah.roundedShare)} د.ع',
-                          style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold),
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 2,
+                          children: [
+                            Directionality(
+                              textDirection: TextDirection.ltr,
+                              child: Text(fmt.format(_diyah.roundedShare), style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold)),
+                            ),
+                            const Text('د.ع', style: TextStyle(fontSize: 12, color: Colors.white)),
+                          ],
                         ),
                       ],
                     ),
@@ -417,7 +438,18 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                     children: [
                       const Icon(Icons.history, color: Colors.amberAccent, size: 16),
                       const SizedBox(width: 6),
-                      Text('تم تغطية ${fmt.format(_diyah.paidFromOldDiyahFund)} د.ع من رصيد الديات القديمة', style: const TextStyle(color: Colors.amberAccent, fontSize: 12)),
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 4,
+                        children: [
+                          const Text('تم تغطية', style: TextStyle(color: Colors.amberAccent, fontSize: 12)),
+                          Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Text(fmt.format(_diyah.paidFromOldDiyahFund), style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                          const Text('د.ع من رصيد الديات القديمة', style: TextStyle(color: Colors.amberAccent, fontSize: 12)),
+                        ],
+                      ),
                     ],
                   ),
                 ),
