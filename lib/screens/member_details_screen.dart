@@ -10,6 +10,7 @@ import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import 'diyah_details_screen.dart';
 import '../widgets/custom_app_bar.dart';
+import '../utils/number_utility.dart';
 
 class MemberDetailsScreen extends StatefulWidget {
   final Member member;

@@ -8,6 +8,8 @@ import '../widgets/custom_app_bar.dart';
 import '../widgets/smart_search_bar.dart';
 import '../widgets/member_tile.dart';
 import 'member_details_screen.dart';
+import '../services/notification_service.dart';
+import '../utils/number_utility.dart';
 import '../theme/app_theme.dart';
 
 class WalletScreen extends StatefulWidget {
@@ -541,7 +543,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${currencyFmt.format(_availableOldDiyahCash)} د.ع',
+                        '${NumberUtility.formatCurrency(_availableOldDiyahCash)} د.ع',
                         style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -558,7 +560,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${currencyFmt.format(_oldDiyahsDebt)} د.ع',
+                        '${NumberUtility.formatCurrency(_oldDiyahsDebt)} د.ع',
                         style: const TextStyle(color: Colors.orangeAccent, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ],
