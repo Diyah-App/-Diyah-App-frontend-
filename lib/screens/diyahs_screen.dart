@@ -283,10 +283,7 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                               spacing: 4,
                               children: [
                                 const Text('المبلغ المتبقي للتقسيم:'),
-                                Directionality(
-                                  textDirection: TextDirection.ltr,
-                                  child: Text(intl.NumberFormat('#,##0.##', 'en_US').format(remaining)),
-                                ),
+                                Text(NumberUtility.formatCurrency(remaining)),
                                 const Text('د.ع'),
                               ],
                             ),
@@ -297,10 +294,7 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                               spacing: 4,
                               children: [
                                 const Text('الحصة الدقيقة لكل عضو:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
-                                Directionality(
-                                  textDirection: TextDirection.ltr,
-                                  child: Text(intl.NumberFormat('#,##0.##', 'en_US').format(exactShare), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
-                                ),
+                                Text(NumberUtility.formatCurrency(exactShare), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
                                 const Text('د.ع', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
                               ],
                             ),
@@ -545,8 +539,8 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('المبلغ الإجمالي: ${intl.NumberFormat('#,##0.##').format(diyah.amount)} د.ع'),
-            Text('حصة الفرد: ${intl.NumberFormat('#,##0.##').format(diyah.sharePerMember)} د.ع', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            Text('المبلغ الإجمالي: ${NumberUtility.formatCurrency(diyah.amount)} د.ع'),
+            Text('حصة الفرد: ${NumberUtility.formatCurrency(diyah.sharePerMember)} د.ع', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
             Text('صاحب الدية: ${diyah.causedByName ?? "غير محدد"}', style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
             const SizedBox(height: 4),
             Row(

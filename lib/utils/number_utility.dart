@@ -1,6 +1,13 @@
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 class NumberUtility {
+  /// Formats a number with commas and isolates it with LTR markers 
+  /// so it renders correctly in RTL HTML renderer.
+  static String formatCurrency(double amount) {
+    final fmt = NumberFormat('#,##0.##', 'en_US');
+    return '\u202A${fmt.format(amount)}\u202C';
+  }
   /// Converts Arabic/Eastern digits to Western digits, removes spaces and commas.
   static String cleanNumberString(String input) {
     var text = input;

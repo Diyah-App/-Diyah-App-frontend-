@@ -80,8 +80,6 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFmt = intl.NumberFormat('#,##0.##');
-
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -94,7 +92,7 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
                 children: [
                   _buildHeader(),
                   const SizedBox(height: 12),
-                  _buildBalanceCard(currencyFmt),
+                  _buildBalanceCard(),
                   const SizedBox(height: 16),
                   _buildManagementSection(),
                   const SizedBox(height: 24),
@@ -116,7 +114,7 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
     );
   }
 
-  Widget _buildBalanceCard(intl.NumberFormat currencyFmt) {
+  Widget _buildBalanceCard() {
     final isNegative = _member.balance < 0;
     final isPositive = _member.balance > 0;
     final balanceColor = isNegative 
@@ -130,9 +128,9 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
             ? Colors.green.shade50 
             : Colors.grey.shade100;
     final balanceText = isNegative 
-        ? 'مطلوب ذمة مالية: ${currencyFmt.format(_member.balance.abs())} د.ع'
+        ? 'مطلوب ذمة مالية: ${NumberUtility.formatCurrency(_member.balance.abs())} د.ع'
         : isPositive
-            ? 'له رصيد فائض: +${currencyFmt.format(_member.balance)} د.ع'
+            ? 'له رصيد فائض: +${NumberUtility.formatCurrency(_member.balance)} د.ع'
             : 'الرصيد: مسدد بالكامل (صفر د.ع)';
 
     return Container(
@@ -305,25 +303,24 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
             final double share = d.memberShare ?? d.sharePerMember;
             final double payment = d.memberPayment ?? 0.0;
             final double remaining = share - payment;
-            final fmt = intl.NumberFormat('#,##0.##');
             return ListTile(
               title: Text(d.title, style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('إجمالي الدية: ${fmt.format(d.amount)} د.ع'),
+                  Text('إجمالي الدية: ${NumberUtility.formatCurrency(d.amount)} د.ع'),
                   Row(
                     children: [
-                      Text('المطلوب: ${fmt.format(share)} د.ع', 
+                      Text('المطلوب: ${NumberUtility.formatCurrency(share)} د.ع', 
                         style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey, fontSize: 13)),
                       const SizedBox(width: 16),
-                      Text('المسدد: ${fmt.format(payment)} د.ع', 
+                      Text('المسدد: ${NumberUtility.formatCurrency(payment)} د.ع', 
                         style: TextStyle(fontWeight: FontWeight.bold, color: payment > 0 ? Colors.green.shade700 : Colors.red, fontSize: 13)),
                       const SizedBox(width: 16),
                       Text(
                         remaining > 0 
-                            ? 'المتبقي: ${fmt.format(remaining)} د.ع' 
-                            : (remaining < 0 ? 'الفائض: ${fmt.format(remaining.abs())} د.ع' : 'المتبقي: صفر (مسدد)'),
+                            ? 'المتبقي: ${NumberUtility.formatCurrency(remaining)} د.ع' 
+                            : (remaining < 0 ? 'الفائض: ${NumberUtility.formatCurrency(remaining.abs())} د.ع' : 'المتبقي: صفر (مسدد)'),
                         style: TextStyle(
                           fontWeight: FontWeight.bold, 
                           color: remaining > 0 
@@ -352,8 +349,6 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
   Widget _buildOldDiyahsSection() {
     final diyahs = _notLiable;
     final color = Colors.blueGrey;
-    final fmt = intl.NumberFormat('#,##0.##');
-
     final filtered = diyahs.where((d) => 
       SmartSearchBar.matches(d.title, _notLiableSearch)
     ).toList();
@@ -389,7 +384,7 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text('إجمالي المطلوب للديات القديمة: ${fmt.format(totalRequired)} د.ع', 
+                Text('إجمالي المطلوب للديات القديمة: ${NumberUtility.formatCurrency(totalRequired)} د.ع', 
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
@@ -424,10 +419,10 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('المطلوب: ${fmt.format(share)} د.ع', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                  Text('المطلوب: ${NumberUtility.formatCurrency(share)} د.ع', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
                   Text(
                     remaining > 0 
-                        ? 'المتبقي: ${fmt.format(remaining)} د.ع' 
+                        ? 'المتبقي: ${NumberUtility.formatCurrency(remaining)} د.ع' 
                         : 'تم التسديد',
                     style: TextStyle(
                       fontWeight: FontWeight.bold, 

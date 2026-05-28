@@ -201,8 +201,6 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFmt = intl.NumberFormat('#,##0.##');
-
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -219,19 +217,19 @@ class _WalletScreenState extends State<WalletScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Total Balance Statistics Card
-                _buildStatsCard(currencyFmt),
+                _buildStatsCard(),
                 const SizedBox(height: 20),
 
                 // 1. Dropdown for Transactions Ledger
-                _buildTransactionsDropdown(currencyFmt),
+                _buildTransactionsDropdown(),
                 const SizedBox(height: 14),
 
                 // 2. Dropdown for Settled (Not Owing) Members
-                _buildSettledMembersDropdown(currencyFmt),
+                _buildSettledMembersDropdown(),
                 const SizedBox(height: 14),
 
                 // 3. Dropdown for Owing Members
-                _buildOwingMembersDropdown(currencyFmt),
+                _buildOwingMembersDropdown(),
                 const SizedBox(height: 20),
               ],
             ),
@@ -241,7 +239,7 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Widget _buildTransactionsDropdown(intl.NumberFormat currencyFmt) {
+  Widget _buildTransactionsDropdown() {
     return Card(
       elevation: 2,
       shadowColor: Colors.black12,
@@ -295,7 +293,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '${isPositive ? "+" : ""}${currencyFmt.format(tx.amount)} د.ع',
+                                    '${isPositive ? "+" : ""}${NumberUtility.formatCurrency(tx.amount)} د.ع',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
@@ -350,7 +348,7 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Widget _buildSettledMembersDropdown(intl.NumberFormat currencyFmt) {
+  Widget _buildSettledMembersDropdown() {
     return Card(
       elevation: 2,
       shadowColor: Colors.black12,
@@ -387,7 +385,7 @@ class _WalletScreenState extends State<WalletScreen> {
                               Text(member.phone, style: const TextStyle(color: Colors.grey, fontSize: 13)),
                               Text(
                                 hasSurplus
-                                    ? 'رصيده الفائض: +${currencyFmt.format(member.balance)} د.ع'
+                                    ? 'رصيده الفائض: +${NumberUtility.formatCurrency(member.balance)} د.ع'
                                     : 'الرصيد: صفر (مسدد بالكامل)',
                                 style: TextStyle(
                                   color: hasSurplus ? Colors.green : Colors.grey.shade700,
@@ -412,7 +410,7 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Widget _buildOwingMembersDropdown(intl.NumberFormat currencyFmt) {
+  Widget _buildOwingMembersDropdown() {
     return Card(
       elevation: 2,
       shadowColor: Colors.black12,
@@ -447,7 +445,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             children: [
                               Text(member.phone, style: const TextStyle(color: Colors.grey, fontSize: 13)),
                               Text(
-                                'المتبقي بذمته: ${currencyFmt.format(member.balance.abs())} د.ع',
+                                'المتبقي بذمته: ${NumberUtility.formatCurrency(member.balance.abs())} د.ع',
                                 style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -468,7 +466,7 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Widget _buildStatsCard(intl.NumberFormat currencyFmt) {
+  Widget _buildStatsCard() {
     if (_isLoadingStatus) {
       return Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -507,7 +505,7 @@ class _WalletScreenState extends State<WalletScreen> {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                '${isPositive ? "" : "-"}${currencyFmt.format(_totalBalance.abs())} د.ع',
+                '${isPositive ? "" : "-"}${NumberUtility.formatCurrency(_totalBalance.abs())} د.ع',
                 style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
               ),
             ),
@@ -526,7 +524,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${currencyFmt.format(_currentFundBalance)} د.ع',
+                        '${NumberUtility.formatCurrency(_currentFundBalance)} د.ع',
                         style: const TextStyle(color: Colors.greenAccent, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ],

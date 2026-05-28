@@ -113,7 +113,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
         defaultAmount = _diyah.amount * (_diyah.ownerPercentage! / 100);
       }
 
-      final amountController = TextEditingController(text: intl.NumberFormat('#,##0.##').format(defaultAmount));
+      final amountController = TextEditingController(text: NumberUtility.formatCurrency(defaultAmount).replaceAll('\u202A', '').replaceAll('\u202C', ''));
       final resultAmount = await showDialog<double>(
         context: context,
         builder: (ctx) => Directionality(
@@ -124,7 +124,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('الحصة المطلوبة: ${intl.NumberFormat('#,##0.##').format(defaultAmount)} د.ع', 
+                Text('الحصة المطلوبة: ${NumberUtility.formatCurrency(defaultAmount)} د.ع', 
                   style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
                 const SizedBox(height: 16),
                 TextField(
@@ -313,7 +313,6 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
     final color = _diyah.isFinished 
         ? Colors.green.shade700 
         : (_diyah.isFullyPaid ? Colors.teal.shade700 : Colors.red.shade700);
-    final fmt = intl.NumberFormat('#,##0.##');
     final dateFmt = intl.DateFormat('yyyy-MM-dd');
 
     return Card(
@@ -364,17 +363,14 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                     children: [
                       const Text('المبلغ الإجمالي', style: TextStyle(fontSize: 11, color: Colors.white60)),
                       const SizedBox(height: 2),
-                      Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 2,
-                        children: [
-                          Directionality(
-                            textDirection: TextDirection.ltr,
-                            child: Text(fmt.format(_diyah.amount), style: const TextStyle(fontSize: 15, color: Colors.white70, fontWeight: FontWeight.w600)),
-                          ),
-                          const Text('د.ع', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                        ],
-                      ),
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 2,
+                          children: [
+                            Text(NumberUtility.formatCurrency(_diyah.amount), style: const TextStyle(fontSize: 15, color: Colors.white70, fontWeight: FontWeight.w600)),
+                            const Text('د.ع', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                          ],
+                        ),
                     ],
                   ),
                 ),
@@ -389,10 +385,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         spacing: 2,
                         children: [
-                          Directionality(
-                            textDirection: TextDirection.ltr,
-                            child: Text(fmt.format(_diyah.sharePerMember), style: const TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.bold)),
-                          ),
+                          Text(NumberUtility.formatCurrency(_diyah.sharePerMember), style: const TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.bold)),
                           const Text('د.ع', style: TextStyle(fontSize: 12, color: Colors.white70)),
                         ],
                       ),
@@ -412,10 +405,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           spacing: 2,
                           children: [
-                            Directionality(
-                              textDirection: TextDirection.ltr,
-                              child: Text(fmt.format(_diyah.roundedShare), style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold)),
-                            ),
+                            Text(NumberUtility.formatCurrency(_diyah.roundedShare!), style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold)),
                             const Text('د.ع', style: TextStyle(fontSize: 12, color: Colors.white)),
                           ],
                         ),
@@ -443,10 +433,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                         spacing: 4,
                         children: [
                           const Text('تم تغطية', style: TextStyle(color: Colors.amberAccent, fontSize: 12)),
-                          Directionality(
-                            textDirection: TextDirection.ltr,
-                            child: Text(fmt.format(_diyah.paidFromOldDiyahFund), style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-                          ),
+                          Text(NumberUtility.formatCurrency(_diyah.paidFromOldDiyahFund), style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
                           const Text('د.ع من رصيد الديات القديمة', style: TextStyle(color: Colors.amberAccent, fontSize: 12)),
                         ],
                       ),
@@ -513,7 +500,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(color: Colors.red.shade100, borderRadius: BorderRadius.circular(10)),
               child: Text(
-                'يتحمل ${_diyah.ownerPercentage}% (${intl.NumberFormat('#,##0.##').format(_diyah.amount * (_diyah.ownerPercentage! / 100))} د.ع)', 
+                'يتحمل ${_diyah.ownerPercentage}% (${NumberUtility.formatCurrency(_diyah.amount * (_diyah.ownerPercentage! / 100))} د.ع)', 
                 style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 12),
               ),
             )
@@ -643,11 +630,11 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (member.isWajeeh) ...[
-            Text('حصة الوجيه الفردية: ${intl.NumberFormat('#,##0.##').format(memberShare)} د.ع', style: const TextStyle(fontSize: 12, color: Colors.black87)),
-            Text('حصة المجموعة كاملة (${followersCount + 1}): ${intl.NumberFormat('#,##0.##').format(totalGroupShare)} د.ع', 
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blue)),
+            Text('حصة الوجيه الفردية: ${NumberUtility.formatCurrency(memberShare)} د.ع', style: const TextStyle(fontSize: 12, color: Colors.black87)),
+            Text('حصة المجموعة كاملة (${followersCount + 1}): ${NumberUtility.formatCurrency(totalGroupShare)} د.ع', 
+              style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold)),
           ] else ...[
-            Text('حصة العضو: ${intl.NumberFormat('#,##0.##').format(memberShare)} د.ع', 
+            Text('حصة العضو: ${NumberUtility.formatCurrency(memberShare)} د.ع', 
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.brown)),
             Text('الهاتف: ${member.phone}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
           ],
@@ -835,10 +822,10 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('• المدفوع نقداً: ${intl.NumberFormat('#,##0.##').format(cashPaid)} د.ع', 
-          style: TextStyle(fontSize: 12, color: cashPaid > 0 ? Colors.green.shade800 : Colors.black87)),
+        Text('• المدفوع نقداً: ${NumberUtility.formatCurrency(cashPaid)} د.ع', 
+          style: const TextStyle(fontSize: 11, color: Colors.blue)),
         if (coveredFromBalance > 0)
-          Text('• خصم من الرصيد المتوفر: ${intl.NumberFormat('#,##0.##').format(coveredFromBalance)} د.ع', 
+          Text('• خصم من الرصيد المتوفر: ${NumberUtility.formatCurrency(coveredFromBalance)} د.ع', 
             style: TextStyle(fontSize: 12, color: Colors.blue.shade800)),
         if (remainingClaim > 0)
           Padding(
@@ -847,7 +834,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text('• المتبقي كطلب بالذمة (سالب): ${intl.NumberFormat('#,##0.##').format(remainingClaim)} د.ع', 
+                  child: Text('• المتبقي كطلب بالذمة (سالب): ${NumberUtility.formatCurrency(remainingClaim)} د.ع', 
                     style: TextStyle(fontSize: 12, color: Colors.red.shade800, fontWeight: FontWeight.w600)),
                 ),
                 if (['owner', 'sheikh', 'admin'].contains(AuthService.role))
@@ -869,7 +856,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
         if (cashPaid >= memberShare)
           Text(
             cashPaid > memberShare 
-              ? '• تم التسديد بالكامل وفائض +${intl.NumberFormat('#,##0.##').format(cashPaid - memberShare)} د.ع للرصيد' 
+              ? '• تم التسديد بالكامل وفائض +${NumberUtility.formatCurrency(cashPaid - memberShare)} د.ع للرصيد' 
               : '• تم التسديد بالكامل نقداً',
             style: TextStyle(fontSize: 12, color: Colors.green.shade900, fontWeight: FontWeight.bold),
           ),
@@ -882,7 +869,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
 
   Future<void> _payRemaining(int memberId, double remainingAmount, double currentPaid) async {
     final member = _allMembers.firstWhere((m) => m.id == memberId);
-    final amountController = TextEditingController(text: intl.NumberFormat('#,##0.##').format(remainingAmount));
+    final amountController = TextEditingController(text: NumberUtility.formatCurrency(remainingAmount).replaceAll('\u202A', '').replaceAll('\u202C', ''));
     
     final resultAmount = await showDialog<double>(
       context: context,
@@ -894,7 +881,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('المبلغ المتبقي بالذمة: ${intl.NumberFormat('#,##0.##').format(remainingAmount)} د.ع', 
+              Text('المبلغ المتبقي بالذمة: ${NumberUtility.formatCurrency(remainingAmount)} د.ع', 
                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
               const SizedBox(height: 16),
               TextField(
