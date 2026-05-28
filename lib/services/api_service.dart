@@ -196,12 +196,15 @@ class ApiService {
     throw Exception('Failed to load payment status');
   }
 
-  static Future<void> updateDiyahPayments(int diyahId, Map<int, double?> payments) async {
+  static Future<void> updateDiyahPayments(int diyahId, Map<int, double?> payments, {List<int> removedMemberIds = const []}) async {
     final paymentsList = payments.entries.map((e) => {'member_id': e.key, 'amount': e.value}).toList();
     final response = await http.post(
       Uri.parse('$baseUrl/diyahs/$diyahId/payments'),
       headers: _getHeaders(),
-      body: json.encode({'payments': paymentsList}),
+      body: json.encode({
+        'payments': paymentsList,
+        'removed_member_ids': removedMemberIds,
+      }),
     );
     if (response.statusCode != 200) {
       String errMsg = 'فشل في تحديث المدفوعات';

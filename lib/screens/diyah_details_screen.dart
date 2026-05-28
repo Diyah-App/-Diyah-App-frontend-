@@ -106,6 +106,21 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
         _payments.remove(memberId);
         _applyFilters();
       });
+
+      try {
+        if (!mounted) return;
+        await ApiService.updateDiyahPayments(_diyah.id!, _payments, removedMemberIds: [memberId]);
+        if (!mounted) return;
+        NotificationService().addNotification(
+          title: 'تعديل سداد',
+          message: 'تم تحديث حالة دفع ${member.fullName} لدية ${_diyah.title}',
+          type: NotificationType.diyah,
+          entityId: _diyah.id,
+        );
+        _checkAndPromptDiyahCompletion();
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في المزامنة: $e')));
+      }
     } else {
       // Show payment dialog
       double defaultAmount = _diyah.roundedShare ?? _diyah.sharePerMember;
@@ -156,21 +171,21 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
         _payments[memberId] = resultAmount;
         _applyFilters();
       });
-    }
 
-    try {
-      if (!mounted) return;
-      await ApiService.updateDiyahPayments(_diyah.id!, _payments);
-      if (!mounted) return;
-      NotificationService().addNotification(
-        title: 'تعديل سداد',
-        message: 'تم تحديث حالة دفع ${member.fullName} لدية ${_diyah.title}',
-        type: NotificationType.diyah,
-        entityId: _diyah.id,
-      );
-      _checkAndPromptDiyahCompletion();
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في المزامنة: $e')));
+      try {
+        if (!mounted) return;
+        await ApiService.updateDiyahPayments(_diyah.id!, _payments);
+        if (!mounted) return;
+        NotificationService().addNotification(
+          title: 'تعديل سداد',
+          message: 'تم تحديث حالة دفع ${member.fullName} لدية ${_diyah.title}',
+          type: NotificationType.diyah,
+          entityId: _diyah.id,
+        );
+        _checkAndPromptDiyahCompletion();
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في المزامنة: $e')));
+      }
     }
   }
 
@@ -182,6 +197,41 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
         appBar: CustomAppBar(
           title: 'تفاصيل الدية',
           extraActions: ['owner', 'sheikh', 'admin'].contains(AuthService.role) ? [
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.white),
+              tooltip: 'حذف الدية',
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('تأكيد الحذف'),
+                    content: Text('هل أنت متأكد من أنك تريد حذف هذه الدية (${_diyah.title}) بالكامل؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف جميع سجلات الدفع المرتبطة بها.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: const Text('نعم، حذف'),
+                      ),
+                    ],
+                  ),
+                );
+                
+                if (confirm == true) {
+                  try {
+                    await ApiService.deleteDiyah(_diyah.id!);
+                    if (!mounted) return;
+                    NotificationService().addNotification(
+                      title: 'حذف دية',
+                      message: 'تم حذف الدية: ${_diyah.title}',
+                    );
+                    Navigator.pop(context, true); // Return true to signal deletion
+                  } catch (e) {
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في الحذف: $e')));
+                  }
+                }
+              },
+            ),
             IconButton(
               icon: Icon(_diyah.isFinished ? Icons.check_circle : Icons.circle_outlined, color: Colors.white),
               tooltip: _diyah.isFinished ? 'إعادة فتح' : 'إنهاء الدية',

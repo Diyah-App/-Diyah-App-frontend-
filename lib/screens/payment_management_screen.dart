@@ -54,10 +54,10 @@ class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
     }
   }
 
-  Future<void> _syncPayments() async {
+  Future<void> _syncPayments({List<int> removedMemberIds = const []}) async {
     setState(() => _isSaving = true);
     try {
-      await ApiService.updateDiyahPayments(_diyah.id!, _payments);
+      await ApiService.updateDiyahPayments(_diyah.id!, _payments, removedMemberIds: removedMemberIds);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في المزامنة: $e')));
     } finally {
@@ -94,7 +94,7 @@ class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
       message: '${wasPaid ? "إلغاء دفع" : "تأكيد دفع"} حصة العضو: ${member.fullName}',
     );
     
-    await _syncPayments();
+    await _syncPayments(removedMemberIds: wasPaid ? [memberId] : []);
     await _checkAndPromptDiyahCompletion();
   }
 
@@ -124,12 +124,16 @@ class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
   }
 
   Future<void> _deselectAll() async {
+    List<int> removedIds = [];
     setState(() {
       for (var m in _allMembers) {
         if (AuthService.role == 'wajeeh') {
           if (m.id != AuthService.currentUserId && m.wajeehId != AuthService.currentUserId) continue;
         }
-        _payments.remove(m.id!);
+        if (_payments.containsKey(m.id)) {
+          removedIds.add(m.id!);
+          _payments.remove(m.id!);
+        }
       }
       _paidMemberIds = _payments.keys.toSet();
     });
@@ -139,7 +143,7 @@ class _PaymentManagementScreenState extends State<PaymentManagementScreen> {
       type: NotificationType.diyah,
       entityId: _diyah.id,
     );
-    await _syncPayments();
+    await _syncPayments(removedMemberIds: removedIds);
     await _checkAndPromptDiyahCompletion();
   }
 
