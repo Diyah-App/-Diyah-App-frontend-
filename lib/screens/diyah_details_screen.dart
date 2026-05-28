@@ -611,17 +611,12 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
       }
     }
 
-    // Calculate detailed breakdown
+    // Only show covered from balance if there's no cash payment AND member toggle is ON
+    // We cannot reliably calculate balance-covered amount from frontend data alone
+    // Just show: cashPaid (actual cash), and remainingClaim
     final cashPaid = paidAmount ?? 0.0;
-    final balanceBefore = member.balance - cashPaid + memberShare;
-
     double coveredFromBalance = 0.0;
     double remainingClaim = memberShare - cashPaid;
-
-    if (remainingClaim > 0 && balanceBefore > 0) {
-      coveredFromBalance = balanceBefore >= remainingClaim ? remainingClaim : balanceBefore;
-      remainingClaim = remainingClaim - coveredFromBalance;
-    }
     if (remainingClaim < 0) remainingClaim = 0.0;
 
     return MemberTile(
@@ -781,15 +776,9 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
       memberShare = _diyah.amount * (_diyah.ownerPercentage! / 100);
     }
     final cashPaid = paidAmount ?? 0.0;
-    final balanceBefore = wajeeh.balance - cashPaid + memberShare;
 
     double coveredFromBalance = 0.0;
     double remainingClaim = memberShare - cashPaid;
-
-    if (remainingClaim > 0 && balanceBefore > 0) {
-      coveredFromBalance = balanceBefore >= remainingClaim ? remainingClaim : balanceBefore;
-      remainingClaim = remainingClaim - coveredFromBalance;
-    }
     if (remainingClaim < 0) remainingClaim = 0.0;
 
     return Padding(
