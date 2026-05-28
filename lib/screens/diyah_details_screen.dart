@@ -108,7 +108,7 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
       });
     } else {
       // Show payment dialog
-      double defaultAmount = _diyah.sharePerMember;
+      double defaultAmount = _diyah.roundedShare ?? _diyah.sharePerMember;
       if (memberId == _diyah.causedById && _diyah.ownerPercentage != null) {
         defaultAmount = _diyah.amount * (_diyah.ownerPercentage! / 100);
       }
@@ -376,17 +376,52 @@ class _DiyahDetailsScreenState extends State<DiyahDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text('حصة الفرد', style: TextStyle(fontSize: 11, color: Colors.white60)),
+                      const Text('الحصة الدقيقة', style: TextStyle(fontSize: 11, color: Colors.white60)),
                       const SizedBox(height: 2),
                       Text(
                         '${fmt.format(_diyah.sharePerMember)} د.ع',
-                        style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                 ),
+                if (_diyah.roundedShare != null)
+                  Container(width: 1, height: 36, color: Colors.white24),
+                if (_diyah.roundedShare != null)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text('الحصة التقريبية (المعتمدة)', style: TextStyle(fontSize: 11, color: Colors.white60)),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${fmt.format(_diyah.roundedShare)} د.ع',
+                          style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
+            if (_diyah.paidFromOldDiyahFund > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black12,
+                    borderRadius: BorderRadius.circular(8)
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.history, color: Colors.amberAccent, size: 16),
+                      const SizedBox(width: 6),
+                      Text('تم تغطية ${fmt.format(_diyah.paidFromOldDiyahFund)} د.ع من رصيد الديات القديمة', style: const TextStyle(color: Colors.amberAccent, fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
             const SizedBox(height: 10),
             const Divider(color: Colors.white24, height: 1),
             const SizedBox(height: 8),

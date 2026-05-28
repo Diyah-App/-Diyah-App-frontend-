@@ -20,9 +20,10 @@ class WalletScreen extends StatefulWidget {
 class _WalletScreenState extends State<WalletScreen> {
   // Wallet Status Stats
   double _totalBalance = 0.0;
+  double _currentFundBalance = 0.0;
+  double _availableOldDiyahCash = 0.0;
+  double _oldDiyahsDebt = 0.0;
   int _totalMembersCount = 0;
-  double _totalPositiveFunds = 0.0;
-  double _totalDeficit = 0.0;
 
   // Data lists
   List<WalletTransaction> _transactions = [];
@@ -71,9 +72,10 @@ class _WalletScreenState extends State<WalletScreen> {
       if (mounted) {
         setState(() {
           _totalBalance = (status['total_balance'] as num?)?.toDouble() ?? 0.0;
+          _currentFundBalance = (status['current_fund_balance'] as num?)?.toDouble() ?? 0.0;
+          _availableOldDiyahCash = (status['available_old_diyah_cash'] as num?)?.toDouble() ?? 0.0;
+          _oldDiyahsDebt = (status['old_diyahs_debt'] as num?)?.toDouble() ?? 0.0;
           _totalMembersCount = (status['total_members'] as num?)?.toInt() ?? 0;
-          _totalPositiveFunds = (status['total_positive_funds'] as num?)?.toDouble() ?? 0.0;
-          _totalDeficit = (status['total_deficit'] as num?)?.toDouble() ?? 0.0;
           _isLoadingStatus = false;
         });
       }
@@ -518,13 +520,13 @@ class _WalletScreenState extends State<WalletScreen> {
                   child: Column(
                     children: [
                       const Text(
-                        'الأموال الفائضة المتوفرة',
+                        'رصيد الصندوق الحالي',
                         style: TextStyle(color: Colors.white70, fontSize: 11),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${currencyFmt.format(_totalPositiveFunds)} د.ع',
+                        '${currencyFmt.format(_currentFundBalance)} د.ع',
                         style: const TextStyle(color: Colors.greenAccent, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -535,13 +537,30 @@ class _WalletScreenState extends State<WalletScreen> {
                   child: Column(
                     children: [
                       const Text(
-                        'إجمالي المديونية المطلوبة',
+                        'نقد الديات القديمة',
                         style: TextStyle(color: Colors.white70, fontSize: 11),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${currencyFmt.format(_totalDeficit)} د.ع',
+                        '${currencyFmt.format(_availableOldDiyahCash)} د.ع',
+                        style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(width: 1, height: 40, color: Colors.white24),
+                Expanded(
+                  child: Column(
+                    children: [
+                      const Text(
+                        'ديون الديات القديمة',
+                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${currencyFmt.format(_oldDiyahsDebt)} د.ع',
                         style: const TextStyle(color: Colors.orangeAccent, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ],

@@ -11,7 +11,9 @@ class Diyah {
   final String? causedByName;
   final int totalMembersCount;
   final double sharePerMember;
+  final double? roundedShare;
   final double? ownerPercentage;
+  final double paidFromOldDiyahFund;
   final double? memberPayment;
   final double? memberShare;
 
@@ -28,7 +30,9 @@ class Diyah {
     this.causedByName,
     this.totalMembersCount = 1,
     this.sharePerMember = 0.0,
+    this.roundedShare,
     this.ownerPercentage,
+    this.paidFromOldDiyahFund = 0.0,
     this.memberPayment,
     this.memberShare,
   });
@@ -47,7 +51,9 @@ class Diyah {
       causedByName: json['caused_by_name'],
       totalMembersCount: json['total_members_count'] ?? 0,
       sharePerMember: (json['share_per_member'] as num?)?.toDouble() ?? 0.0,
+      roundedShare: (json['rounded_share'] as num?)?.toDouble(),
       ownerPercentage: (json['owner_percentage'] as num?)?.toDouble(),
+      paidFromOldDiyahFund: (json['paid_from_old_diyah_fund'] as num?)?.toDouble() ?? 0.0,
       memberPayment: (json['member_payment'] as num?)?.toDouble(),
       memberShare: (json['member_share'] as num?)?.toDouble(),
     );
@@ -63,6 +69,7 @@ class Diyah {
       'is_finished': isFinished,
       'is_fully_paid': isFullyPaid,
       'caused_by_id': causedById,
+      'rounded_share': roundedShare,
       'owner_percentage': ownerPercentage,
       'member_payment': memberPayment,
       'member_share': memberShare,

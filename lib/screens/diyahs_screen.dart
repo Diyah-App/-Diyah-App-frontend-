@@ -82,6 +82,8 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
     final percentController = TextEditingController(text: diyah?.ownerPercentage?.toString() ?? '35');
     final ownerAmountController = TextEditingController();
     
+    final roundedShareController = TextEditingController(text: diyah?.roundedShare?.toString());
+    
     DateTime? selectedDate = diyah?.manualDate;
     int? selectedCausedById = diyah?.causedById;
     bool useCustomPercentage = diyah?.ownerPercentage != null;
@@ -95,6 +97,7 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
 
     final membersResponse = await ApiService.getMembers(limit: 0);
     List<Member> allMembers = (membersResponse['data'] as List).cast<Member>();
+    int eligibleCount = allMembers.where((m) => m.role != 'owner').length;
 
     if (!mounted) return;
 
@@ -124,6 +127,7 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                             ? ownerAmount.toInt().toString() 
                             : ownerAmount.toStringAsFixed(2);
                       }
+                      setDialogState(() {});
                     },
                   ),
                   TextField(controller: descController, decoration: const InputDecoration(labelText: 'الوصف (اختياري)')),
@@ -207,12 +211,62 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                                       ? percent.toInt().toString() 
                                       : percent.toStringAsFixed(2);
                                 }
+                                setDialogState(() {});
                               },
                             ),
                           ),
                         ],
                       ),
                     ),
+                    
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blueGrey.shade200),
+                    ),
+                    child: Builder(
+                      builder: (context) {
+                        final totalAmount = NumberUtility.tryParseDouble(amountController.text) ?? 0.0;
+                        double ownerAmount = 0.0;
+                        if (useCustomPercentage) {
+                          ownerAmount = NumberUtility.tryParseDouble(ownerAmountController.text) ?? 0.0;
+                        }
+                        final remaining = totalAmount > ownerAmount ? totalAmount - ownerAmount : 0.0;
+                        final exactShare = eligibleCount > 0 ? remaining / eligibleCount : 0.0;
+                        
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('المحاكاة الديناميكية للدية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            const SizedBox(height: 8),
+                            Text('المبلغ المتبقي للتقسيم: ${intl.NumberFormat('#,##0.##').format(remaining)} د.ع'),
+                            Text('عدد الأعضاء المساهمين: $eligibleCount عضو', style: const TextStyle(color: Colors.blueGrey)),
+                            const SizedBox(height: 4),
+                            Text('الحصة الدقيقة لكل عضو: ${intl.NumberFormat('#,##0.##').format(exactShare)} د.ع', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: roundedShareController,
+                              decoration: const InputDecoration(
+                                labelText: 'الحصة التقريبية (د.ع)',
+                                hintText: 'مثال: 10000',
+                                border: OutlineInputBorder(),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                              inputFormatters: [AmountInputFormatter()],
+                              onChanged: (_) => setDialogState(() {}),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text('الحصة التقريبية سيتم اعتمادها كمبلغ إجباري لجميع الأعضاء الحاليين والجدد. الفائض سيذهب للصندوق.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                          ],
+                        );
+                      }
+                    ),
+                  ),
                   const Divider(),
                   ListTile(
                     title: Text(selectedDate == null ? 'تاريخ الواقعة (اختياري)' : 'تاريخ الواقعة: ${intl.DateFormat('yyyy-MM-dd').format(selectedDate!)}'),
@@ -254,6 +308,7 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                     causedById: selectedCausedById,
                     isFinished: diyah?.isFinished ?? false,
                     ownerPercentage: percentage,
+                    roundedShare: NumberUtility.tryParseDouble(roundedShareController.text),
                   );
                   try {
                     if (diyah == null) {
