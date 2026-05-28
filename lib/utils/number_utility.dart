@@ -6,7 +6,9 @@ class NumberUtility {
   /// so it renders correctly in RTL HTML renderer.
   static String formatCurrency(double amount) {
     final fmt = NumberFormat('#,##0.##', 'en_US');
-    return '\u202A${fmt.format(amount)}\u202C';
+    // \u200E is Left-to-Right Mark (LRM) - forces browser to render number in LTR direction
+    // This is more reliable than LRE/PDF embedding (\u202A/\u202C) across all browsers
+    return '\u200E${fmt.format(amount)}\u200E';
   }
   /// Converts Arabic/Eastern digits to Western digits, removes spaces and commas.
   static String cleanNumberString(String input) {
