@@ -41,6 +41,17 @@ class NotificationModel {
       'entityId': entityId,
     };
   }
+
+  factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    return NotificationModel(
+      id: json['id'].toString(),
+      title: 'إشعار من الإدارة', // Default title for server notifications
+      message: json['message'] ?? '',
+      timestamp: json['created_at'] != null ? DateTime.parse(json['created_at']).toLocal() : DateTime.now(),
+      type: NotificationType.general,
+      isRead: true, // Assuming fetched history is already read
+    );
+  }
 }
 
 class NotificationService extends ChangeNotifier {
@@ -60,6 +71,47 @@ class NotificationService extends ChangeNotifier {
   List<NotificationModel> get notifications => List.unmodifiable(_notifications);
   
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
+
+  int _page = 1;
+  final int _limit = 30;
+  bool hasMoreHistory = true;
+  bool isLoadingHistory = false;
+
+  Future<void> loadMoreHistory() async {
+    if (isLoadingHistory || !hasMoreHistory) return;
+    isLoadingHistory = true;
+    notifyListeners();
+
+    try {
+      final response = await ApiService.getNotifications(page: _page, limit: _limit, userId: AuthService.currentUserId);
+      final fetched = (response['data'] as List).map((json) => NotificationModel.fromJson(json)).toList();
+      
+      final existingIds = _notifications.map((n) => n.id).toSet();
+      for (var n in fetched) {
+        if (!existingIds.contains(n.id)) {
+          _notifications.add(n);
+        }
+      }
+      
+      // Sort so newest are always first
+      _notifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      
+      hasMoreHistory = response['has_more'] ?? false;
+      _page++;
+    } catch (e) {
+      debugPrint('Error fetching notifications: $e');
+    } finally {
+      isLoadingHistory = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> refreshHistory() async {
+    _page = 1;
+    hasMoreHistory = true;
+    _notifications.clear();
+    await loadMoreHistory();
+  }
 
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   
@@ -278,8 +330,36 @@ class NotificationBadgeIcon extends StatelessWidget {
   }
 }
 
-class NotificationHistoryScreen extends StatelessWidget {
+class NotificationHistoryScreen extends StatefulWidget {
   const NotificationHistoryScreen({super.key});
+
+  @override
+  State<NotificationHistoryScreen> createState() => _NotificationHistoryScreenState();
+}
+
+class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch initial history when opening screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService().refreshHistory();
+    });
+    
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 50) {
+        NotificationService().loadMoreHistory();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -305,6 +385,12 @@ class NotificationHistoryScreen extends StatelessWidget {
           animation: NotificationService(),
           builder: (context, child) {
             final notifications = NotificationService().notifications;
+            final isLoading = NotificationService().isLoadingHistory;
+            final hasMore = NotificationService().hasMoreHistory;
+            
+            if (notifications.isEmpty && isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
             
             if (notifications.isEmpty) {
               return const Center(
@@ -320,9 +406,17 @@ class NotificationHistoryScreen extends StatelessWidget {
             }
 
             return ListView.separated(
-              itemCount: notifications.length,
+              controller: _scrollController,
+              itemCount: notifications.length + (hasMore ? 1 : 0),
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
+                if (index == notifications.length) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                
                 final notification = notifications[index];
                 return ListTile(
                   leading: CircleAvatar(

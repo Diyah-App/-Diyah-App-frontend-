@@ -240,4 +240,21 @@ class ApiService {
     }
     throw Exception('Failed to load transactions');
   }
+
+  // --- Notifications ---
+  static Future<Map<String, dynamic>> getNotifications({int page = 1, int limit = 30, int? userId}) async {
+    String url = '$baseUrl/notifications?page=$page&limit=$limit';
+    if (userId != null) {
+      url += '&user_id=$userId';
+    }
+    final response = await http.get(Uri.parse(url), headers: _getHeaders());
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      if (decoded is List) {
+        return {'data': decoded, 'has_more': false};
+      }
+      return {'data': decoded['data'] ?? [], 'has_more': decoded['has_more'] ?? false};
+    }
+    throw Exception('Failed to load notifications');
+  }
 }
