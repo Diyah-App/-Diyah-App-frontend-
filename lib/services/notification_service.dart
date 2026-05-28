@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'api_service.dart';
+import 'auth_service.dart';
+import '../models/member_model.dart';
+import '../models/diyah_model.dart';
 import '../screens/member_details_screen.dart';
 import '../screens/diyah_details_screen.dart';
 import '../widgets/custom_app_bar.dart';
@@ -248,7 +251,8 @@ class NotificationService extends ChangeNotifier {
         final member = members.firstWhere((m) => m.id == entityId);
         nav.push(MaterialPageRoute(builder: (_) => MemberDetailsScreen(member: member)));
       } else if (type == 'diyah') {
-        final diyahs = await ApiService.getDiyahs();
+        final diyahsResponse = await ApiService.getDiyahs(limit: 0);
+        final diyahs = (diyahsResponse['data'] as List).cast<Diyah>();
         final diyah = diyahs.firstWhere((d) => d.id == entityId);
         nav.push(MaterialPageRoute(builder: (_) => DiyahDetailsScreen(diyah: diyah)));
       }

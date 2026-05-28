@@ -4,10 +4,11 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
-import 'screens/splash_screen.dart';
+import 'screens/static_splash_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'utils/constants.dart';
 import 'services/auth_service.dart';
+import 'package:http/http.dart' as http;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -41,6 +42,33 @@ void main() async {
     String remoteUrl = remoteConfig.getString('api_url');
     if (remoteUrl.isNotEmpty) {
       AppConstants.baseUrl = remoteUrl;
+    }
+    
+    // Advanced Fallback Logic: Test connectivity in order
+    bool isConnected = false;
+    
+    // 1. Test Primary URL (From Firebase)
+    try {
+      await http.get(Uri.parse('${AppConstants.baseUrl}/diyahs?page=1&limit=1')).timeout(const Duration(seconds: 2));
+      isConnected = true;
+    } catch (e) {
+      debugPrint("Primary URL failed: $e");
+    }
+
+    // 2. Test PythonAnywhere Fallback
+    if (!isConnected && AppConstants.baseUrl != 'https://DiyahAppBckend.pythonanywhere.com/api') {
+      AppConstants.baseUrl = 'https://DiyahAppBckend.pythonanywhere.com/api';
+      try {
+        await http.get(Uri.parse('${AppConstants.baseUrl}/diyahs?page=1&limit=1')).timeout(const Duration(seconds: 2));
+        isConnected = true;
+      } catch (e) {
+        debugPrint("PythonAnywhere URL failed: $e");
+      }
+    }
+
+    // 3. Fallback to Localhost if all else fails
+    if (!isConnected) {
+      AppConstants.baseUrl = 'http://127.0.0.1:5000/api';
     }
 
     // Check for Updates
@@ -95,7 +123,7 @@ class TribalApp extends StatelessWidget {
           child: child!,
         );
       },
-      home: SplashScreen(needsUpdate: needsUpdate, updateUrl: updateUrl),
+      home: StaticSplashScreen(needsUpdate: needsUpdate, updateUrl: updateUrl),
     );
   }
 }

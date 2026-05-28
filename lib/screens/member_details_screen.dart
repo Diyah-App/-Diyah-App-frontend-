@@ -108,7 +108,7 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
                   _buildDiyahHistorySection('ديات تم تسديدها بالكامل', _paid, Colors.green, _paidSearch, (val) => setState(() => _paidSearch = val)),
                   _buildDiyahHistorySection('الديات قيد التسديد (مدفوعة جزئياً)', _partiallyPaid, Colors.amber.shade800, _partiallyPaidSearch, (val) => setState(() => _partiallyPaidSearch = val)),
                   _buildDiyahHistorySection('ديات قيد التحصيل (غير مدفوعة)', _pending, Colors.orange, _pendingSearch, (val) => setState(() => _pendingSearch = val)),
-                  _buildDiyahHistorySection('ديات قديمة (غير مشمول)', _notLiable, Colors.blueGrey, _notLiableSearch, (val) => setState(() => _notLiableSearch = val)),
+                  _buildOldDiyahsSection(),
                 ],
               ),
             ),
@@ -348,6 +348,142 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
       ],
     );
   }
+
+  Widget _buildOldDiyahsSection() {
+    final diyahs = _notLiable;
+    final color = Colors.blueGrey;
+    final fmt = intl.NumberFormat('#,##0.##');
+
+    final filtered = diyahs.where((d) => 
+      SmartSearchBar.matches(d.title, _notLiableSearch)
+    ).toList();
+
+    // Calculate total required
+    double totalRequired = 0;
+    List<int> unpaidDiyahIds = [];
+    for (var d in diyahs) {
+      final double share = d.memberShare ?? d.sharePerMember;
+      final double payment = d.memberPayment ?? 0.0;
+      final double remaining = share - payment;
+      if (remaining > 0) {
+        totalRequired += remaining;
+        unpaidDiyahIds.add(d.id!);
+      }
+    }
+
+    return ExpansionTile(
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('ديات قديمة مطلوبة', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            decoration: BoxDecoration(color: color.withAlpha(30), borderRadius: BorderRadius.circular(10)),
+            child: Text(diyahs.length.toString(), style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+        ],
+      ),
+      children: [
+        if (totalRequired > 0 && (AuthService.role == 'owner' || AuthService.role == 'sheikh' || AuthService.role == 'admin'))
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Text('إجمالي المطلوب للديات القديمة: ${fmt.format(totalRequired)} د.ع', 
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.payment),
+                  label: const Text('دفع جميع الديات القديمة'),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                  onPressed: () => _payOldDiyahs(unpaidDiyahIds),
+                ),
+              ],
+            ),
+          ),
+        if (diyahs.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: SmartSearchBar(
+              hintText: 'بحث في هذه القائمة...',
+              onChanged: (val) => setState(() => _notLiableSearch = val),
+            ),
+          ),
+        if (filtered.isEmpty && diyahs.isNotEmpty)
+          const ListTile(title: Text('لا توجد نتائج تطابق بحثك', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey))),
+        if (diyahs.isEmpty)
+          const ListTile(title: Text('لا يوجد سجل حالياً'))
+        else
+          ...filtered.map((d) {
+            final double share = d.memberShare ?? d.sharePerMember;
+            final double payment = d.memberPayment ?? 0.0;
+            final double remaining = share - payment;
+            
+            return ListTile(
+              title: Text(d.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('المطلوب: ${fmt.format(share)} د.ع', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                  Text(
+                    remaining > 0 
+                        ? 'المتبقي: ${fmt.format(remaining)} د.ع' 
+                        : 'تم التسديد',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold, 
+                      color: remaining > 0 ? Colors.orange.shade800 : Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+              trailing: remaining > 0 && (AuthService.role == 'owner' || AuthService.role == 'sheikh' || AuthService.role == 'admin')
+                  ? ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                      onPressed: () => _payOldDiyahs([d.id!]),
+                      child: const Text('دفع'),
+                    )
+                  : const Icon(Icons.check_circle, color: Colors.green),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (ctx) => DiyahDetailsScreen(diyah: d)),
+                ).then((_) => _loadHistory());
+              },
+            );
+          }),
+      ],
+    );
+  }
+
+  void _payOldDiyahs(List<int> diyahIds) async {
+    bool confirm = await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تأكيد الدفع'),
+        content: const Text('هل أنت متأكد من دفع الديات المحددة؟ سيتم تحويل المبلغ إلى الصندوق العام.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تأكيد', style: TextStyle(color: Colors.green))),
+        ],
+      )
+    ) ?? false;
+
+    if (!confirm) return;
+
+    try {
+      await ApiService.payOldDiyahs(_member.id!, diyahIds);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم الدفع بنجاح')));
+        _loadHistory();
+        NotificationService().addRefreshRequest();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+      }
+    }
+  }
+
 
   Widget _buildFollowersSection() {
     final filtered = _followers.where((m) => 

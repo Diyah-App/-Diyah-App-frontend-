@@ -174,11 +174,20 @@ class ApiService {
     );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      final paymentsList = data['payments'] as List;
       final Map<int, double?> paymentsMap = {};
-      for (var p in paymentsList) {
-        paymentsMap[p['member_id']] = (p['amount'] as num?)?.toDouble();
+      
+      if (data['payments'] != null) {
+        final paymentsList = data['payments'] as List;
+        for (var p in paymentsList) {
+          paymentsMap[p['member_id']] = (p['amount'] as num?)?.toDouble();
+        }
+      } else if (data['paid_member_ids'] != null) {
+        final paidList = data['paid_member_ids'] as List;
+        for (var mId in paidList) {
+          paymentsMap[mId] = null;
+        }
       }
+
       return {
         'payments': paymentsMap,
         'eligible': List<int>.from(data['eligible_member_ids']),
@@ -204,6 +213,22 @@ class ApiService {
     }
   }
 
+  static Future<void> payOldDiyahs(int memberId, List<int> diyahIds) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/members/$memberId/pay_old_diyahs'),
+      headers: _getHeaders(),
+      body: json.encode({'diyah_ids': diyahIds}),
+    );
+    if (response.statusCode != 200) {
+      String errMsg = 'فشل في دفع الديات القديمة';
+      try {
+        final body = json.decode(response.body);
+        if (body['error'] != null) errMsg = body['error'];
+      } catch (_) {}
+      throw Exception(errMsg);
+    }
+  }
+
   static Future<void> updateRemoteConfig(Map<String, String> data) async {
     final response = await http.put(
       Uri.parse('$baseUrl/settings/remote-config'),
@@ -218,11 +243,23 @@ class ApiService {
 
   // --- Wallet & الصندوق ---
   static Future<Map<String, dynamic>> getWalletStatus() async {
-    final response = await http.get(Uri.parse('$baseUrl/wallet/status'), headers: _getHeaders());
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/wallet/status'), headers: _getHeaders());
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+    } catch (e) {
+      print('Wallet API error, old backend? $e');
     }
-    throw Exception('Failed to load wallet status');
+    
+    // Fallback for old backend that doesn't have /wallet/status endpoint
+    return {
+      "total_balance": 0.0,
+      "total_members": 0,
+      "total_positive_funds": 0.0,
+      "total_deficit": 0.0,
+      "old_diyahs_fund": 0.0
+    };
   }
 
   static Future<Map<String, dynamic>> getWalletTransactions({String query = "", int page = 1, int limit = 30}) async {
