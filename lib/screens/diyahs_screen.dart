@@ -127,6 +127,15 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                             ? ownerAmount.toInt().toString() 
                             : ownerAmount.toStringAsFixed(2);
                       }
+                      
+                      final total = NumberUtility.tryParseDouble(val) ?? 0.0;
+                      final owner = useCustomPercentage ? (NumberUtility.tryParseDouble(ownerAmountController.text) ?? 0.0) : 0.0;
+                      final remain = total > owner ? total - owner : 0.0;
+                      final exact = eligibleCount > 0 ? remain / eligibleCount : 0.0;
+                      if (roundedShareController.text.isEmpty || roundedShareController.text == exact.toString()) {
+                          roundedShareController.text = exact % 1 == 0 ? exact.toInt().toString() : exact.toStringAsFixed(2);
+                      }
+                      
                       setDialogState(() {});
                     },
                   ),
@@ -163,6 +172,14 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                               ? ownerAmount.toInt().toString() 
                               : ownerAmount.toStringAsFixed(2);
                         }
+                        
+                        final total = NumberUtility.tryParseDouble(amountController.text) ?? 0.0;
+                        final owner = val ? (NumberUtility.tryParseDouble(ownerAmountController.text) ?? 0.0) : 0.0;
+                        final remain = total > owner ? total - owner : 0.0;
+                        final exact = eligibleCount > 0 ? remain / eligibleCount : 0.0;
+                        if (roundedShareController.text.isEmpty || roundedShareController.text == exact.toString()) {
+                            roundedShareController.text = exact % 1 == 0 ? exact.toInt().toString() : exact.toStringAsFixed(2);
+                        }
                       });
                     },
                   ),
@@ -189,6 +206,16 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                                       ? ownerAmount.toInt().toString() 
                                       : ownerAmount.toStringAsFixed(2);
                                 }
+                                
+                                final total = totalAmount;
+                                final owner = useCustomPercentage ? (NumberUtility.tryParseDouble(ownerAmountController.text) ?? 0.0) : 0.0;
+                                final remain = total > owner ? total - owner : 0.0;
+                                final exact = eligibleCount > 0 ? remain / eligibleCount : 0.0;
+                                if (roundedShareController.text.isEmpty || roundedShareController.text == exact.toString()) {
+                                    roundedShareController.text = exact % 1 == 0 ? exact.toInt().toString() : exact.toStringAsFixed(2);
+                                }
+                                
+                                setDialogState(() {});
                               },
                             ),
                           ),
@@ -211,6 +238,15 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                                       ? percent.toInt().toString() 
                                       : percent.toStringAsFixed(2);
                                 }
+                                
+                                final total = totalAmount;
+                                final owner = useCustomPercentage ? ownerAmount : 0.0;
+                                final remain = total > owner ? total - owner : 0.0;
+                                final exact = eligibleCount > 0 ? remain / eligibleCount : 0.0;
+                                if (roundedShareController.text.isEmpty || roundedShareController.text == exact.toString()) {
+                                    roundedShareController.text = exact % 1 == 0 ? exact.toInt().toString() : exact.toStringAsFixed(2);
+                                }
+                                
                                 setDialogState(() {});
                               },
                             ),
@@ -240,12 +276,12 @@ class _DiyahsScreenState extends State<DiyahsScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('المحاكاة الديناميكية للدية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            const Text('تفاصيل الدية المالية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                             const SizedBox(height: 8),
-                            Text('المبلغ المتبقي للتقسيم: ${intl.NumberFormat('#,##0.##').format(remaining)} د.ع'),
+                            Text('المبلغ المتبقي للتقسيم: ${intl.NumberFormat('#,##0.##', 'en_US').format(remaining)}\u200E د.ع'),
                             Text('عدد الأعضاء المساهمين: $eligibleCount عضو', style: const TextStyle(color: Colors.blueGrey)),
                             const SizedBox(height: 4),
-                            Text('الحصة الدقيقة لكل عضو: ${intl.NumberFormat('#,##0.##').format(exactShare)} د.ع', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                            Text('الحصة الدقيقة لكل عضو: ${intl.NumberFormat('#,##0.##', 'en_US').format(exactShare)}\u200E د.ع', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
                             const SizedBox(height: 12),
                             TextField(
                               controller: roundedShareController,
